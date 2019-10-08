@@ -77,7 +77,6 @@ public:
 private Q_SLOTS:
   void updateVisualVisible();
   void updateCollisionVisible();
-  void updateTfPrefix();
   void updateAlpha();
   void updateRobotDescription();
 
@@ -104,7 +103,6 @@ protected:
   FloatProperty* update_rate_property_;
   StringProperty* robot_description_property_;
   FloatProperty* alpha_property_;
-  StringProperty* tf_prefix_property_;
 };
 
 } // namespace rviz

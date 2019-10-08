@@ -51,6 +51,9 @@
 # include <ApplicationServices/ApplicationServices.h>
 #endif
 
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2/convert.h>
+
 using namespace rviz;
 
 class ImageView: public QtOgreRenderWindow

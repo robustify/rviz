@@ -14,10 +14,10 @@ set(SOURCE_FILES
   grid_display.cpp
   illuminance_display.cpp
   image_display.cpp
-  interactive_marker_display.cpp
-  interactive_markers/integer_action.cpp
-  interactive_markers/interactive_marker_control.cpp
-  interactive_markers/interactive_marker.cpp
+#  interactive_marker_display.cpp
+#  interactive_markers/integer_action.cpp
+#  interactive_markers/interactive_marker_control.cpp
+#  interactive_markers/interactive_marker.cpp
   laser_scan_display.cpp
   map_display.cpp
   marker_array_display.cpp

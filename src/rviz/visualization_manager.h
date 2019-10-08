@@ -56,7 +56,7 @@ namespace ros
 class CallbackQueueInterface;
 }
 
-namespace tf
+namespace tf2_ros
 {
 class TransformListener;
 }
@@ -128,7 +128,7 @@ public:
   VisualizationManager(
     RenderPanel* render_panel,
     WindowManagerInterface* wm,
-    boost::shared_ptr<tf::TransformListener> tf);
+    boost::shared_ptr<tf2_ros::TransformListener> tf);
 
   /**
    * \brief Destructor
@@ -203,12 +203,6 @@ public:
    * @sa getFixedFrame() */
   void setFixedFrame( const QString& frame );
   
-  /**
-   * @brief Convenience function: returns getFrameManager()->getTFClient().
-   */
-  [[deprecated("use getTF2BufferPtr() instead")]]
-  tf::TransformListener* getTFClient() const;
-
   /**
    * @brief Convenience function: returns getFrameManager()->getTF2BufferPtr().
    */

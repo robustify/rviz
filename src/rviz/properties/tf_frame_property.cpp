@@ -92,7 +92,7 @@ void TfFrameProperty::fillFrameList()
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-  frame_manager_->getTFClient()->getFrameStrings( std_frames );
+  frame_manager_->getTF2BufferPtr()->_getFrameStrings( std_frames );
 
 #ifndef _WIN32
 # pragma GCC diagnostic pop

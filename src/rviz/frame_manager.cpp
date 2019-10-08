@@ -31,8 +31,8 @@
 #include "display.h"
 #include "properties/property.h"
 
-#include <tf/transform_listener.h>
 #include <ros/ros.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <std_msgs/Float32.h>
 
@@ -46,16 +46,17 @@ namespace rviz
 #endif
 
 FrameManager::FrameManager()
-: FrameManager(boost::shared_ptr<tf::TransformListener>())
+: FrameManager(boost::shared_ptr<tf2_ros::TransformListener>())
 {}
 
 #ifndef _WIN32
 # pragma GCC diagnostic pop
 #endif
 
-FrameManager::FrameManager(boost::shared_ptr<tf::TransformListener> tf)
+FrameManager::FrameManager(boost::shared_ptr<tf2_ros::TransformListener> tf)
 {
-  if (!tf) tf_.reset(new tf::TransformListener(ros::NodeHandle(), ros::Duration(10*60), true));
+  buffer_.reset(new tf2_ros::Buffer);
+  if (!tf) tf_.reset(new tf2_ros::TransformListener(*buffer_));
   else tf_ = tf;
 
   setSyncMode( SyncOff );
@@ -180,7 +181,7 @@ bool FrameManager::adjustTime( const std::string &frame, ros::Time& time )
         ros::Time latest_time;
         std::string error_string;
         int error_code;
-        error_code = tf_->getLatestCommonTime( fixed_frame_, frame, latest_time, &error_string );
+        error_code = buffer_->_getLatestCommonTime( buffer_->_lookupFrameNumber(fixed_frame_), buffer_->_lookupFrameNumber(frame), latest_time, &error_string );
 
         if ( error_code != 0 )
         {
@@ -249,21 +250,27 @@ bool FrameManager::transform(const std::string& frame, ros::Time time, const geo
   orientation = Ogre::Quaternion::IDENTITY;
 
   // put all pose data into a tf stamped pose
-  tf::Quaternion bt_orientation(pose_msg.orientation.x, pose_msg.orientation.y, pose_msg.orientation.z, pose_msg.orientation.w);
-  tf::Vector3 bt_position(pose_msg.position.x, pose_msg.position.y, pose_msg.position.z);
+  tf2::Quaternion bt_orientation(pose_msg.orientation.x, pose_msg.orientation.y, pose_msg.orientation.z, pose_msg.orientation.w);
+  tf2::Vector3 bt_position(pose_msg.position.x, pose_msg.position.y, pose_msg.position.z);
 
   if (bt_orientation.x() == 0.0 && bt_orientation.y() == 0.0 && bt_orientation.z() == 0.0 && bt_orientation.w() == 0.0)
   {
     bt_orientation.setW(1.0);
   }
 
-  tf::Stamped<tf::Pose> pose_in(tf::Transform(bt_orientation,bt_position), time, frame);
-  tf::Stamped<tf::Pose> pose_out;
+  geometry_msgs::PoseStamped pose_in;
+  pose_in.header.frame_id = frame;
+  pose_in.header.stamp = time;
+  tf2::convert(bt_orientation, pose_in.pose.orientation);
+  pose_in.pose.position.x = bt_position.x();
+  pose_in.pose.position.y = bt_position.y();
+  pose_in.pose.position.z = bt_position.z();
+  geometry_msgs::PoseStamped pose_out;
 
   // convert pose into new frame
   try
   {
-    tf_->transformPose( fixed_frame_, pose_in, pose_out );
+    buffer_->transform<geometry_msgs::PoseStamped, geometry_msgs::PoseStamped>( pose_in, pose_out, fixed_frame_ );
   }
   catch(std::runtime_error& e)
   {
@@ -271,18 +278,15 @@ bool FrameManager::transform(const std::string& frame, ros::Time time, const geo
     return false;
   }
 
-  bt_position = pose_out.getOrigin();
-  position = Ogre::Vector3(bt_position.x(), bt_position.y(), bt_position.z());
-
-  bt_orientation = pose_out.getRotation();
-  orientation = Ogre::Quaternion( bt_orientation.w(), bt_orientation.x(), bt_orientation.y(), bt_orientation.z() );
+  position = Ogre::Vector3(pose_out.pose.position.x, pose_out.pose.position.y, pose_out.pose.position.z);
+  orientation = Ogre::Quaternion( pose_out.pose.orientation.w, pose_out.pose.orientation.x, pose_out.pose.orientation.y, pose_out.pose.orientation.z );
 
   return true;
 }
 
 bool FrameManager::frameHasProblems(const std::string& frame, ros::Time time, std::string& error)
 {
-  if (!tf_->frameExists(frame))
+  if (!buffer_->_frameExists(frame))
   {
     error = "Frame [" + frame + "] does not exist";
     if (frame == fixed_frame_)
@@ -303,7 +307,7 @@ bool FrameManager::transformHasProblems(const std::string& frame, ros::Time time
   }
 
   std::string tf_error;
-  bool transform_succeeded = tf_->canTransform(fixed_frame_, frame, time, &tf_error);
+  bool transform_succeeded = buffer_->canTransform(fixed_frame_, frame, time, &tf_error);
   if (transform_succeeded)
   {
     return false;
@@ -335,31 +339,6 @@ std::string getTransformStatusName(const std::string& caller_id)
   std::stringstream ss;
   ss << "Transform [sender=" << caller_id << "]";
   return ss.str();
-}
-
-std::string
-FrameManager::discoverFailureReason(
-  const std::string& frame_id,
-  const ros::Time& stamp,
-  const std::string& caller_id,
-  tf::FilterFailureReason reason)
-{
-  if (reason == tf::filter_failure_reasons::OutTheBack)
-  {
-    std::stringstream ss;
-    ss << "Message removed because it is too old (frame=[" << frame_id << "], stamp=[" << stamp << "])";
-    return ss.str();
-  }
-  else
-  {
-    std::string error;
-    if (transformHasProblems(frame_id, stamp, error))
-    {
-      return error;
-    }
-  }
-
-  return "Unknown reason for transform failure";
 }
 
 std::string

@@ -91,13 +91,13 @@ void GridCellsDisplay::onInitialize()
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-  auto tf_client = context_->getTFClient();
+  auto tf_client = context_->getTF2BufferPtr();
 
 #ifndef _WIN32
 # pragma GCC diagnostic pop
 #endif
 
-  tf_filter_ = new tf::MessageFilter<nav_msgs::GridCells>(
+  tf_filter_ = new tf2_ros::MessageFilter<nav_msgs::GridCells>(
     *tf_client,
     fixed_frame_.toStdString(),
     10,

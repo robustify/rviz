@@ -46,7 +46,6 @@
 # include "rviz/properties/int_property.h"
 #endif
 
-
 namespace Ogre
 {
 class SceneNode;

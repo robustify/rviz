@@ -7,6 +7,7 @@
 
 #include <sensor_msgs/JointState.h>
 #include <rviz/message_filter_display.h>
+#include <tf2_ros/message_filter.h>
 
 namespace Ogre
 {
@@ -30,7 +31,7 @@ namespace urdf
 
 // MessageFilter to support message with out frame_id
 // https://code.ros.org/trac/ros-pkg/ticket/5467
-namespace tf
+namespace tf2_ros
 {
 #ifdef TF_MESSAGEFILTER_DEBUG
 # undef TF_MESSAGEFILTER_DEBUG
@@ -44,7 +45,7 @@ namespace tf
 #define TF_MESSAGEFILTER_WARN(fmt, ...) \
   ROS_WARN_NAMED("message_filter", "MessageFilter [target=%s]: " fmt, getTargetFramesString().c_str(), __VA_ARGS__)
 
-    class MessageFilterJointState : public MessageFilter<sensor_msgs::JointState>
+    class MessageFilterJointState : public tf2_ros::MessageFilter<sensor_msgs::JointState>
     {
 	typedef sensor_msgs::JointState M;
 public:
@@ -65,8 +66,8 @@ public:
 	 * \param nh The NodeHandle to use for any necessary operations
 	 * \param max_rate The maximum rate to check for newly transformable messages
 	 */
-	MessageFilterJointState(Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01))
-	    : MessageFilter<sensor_msgs::JointState>(tf, target_frame, queue_size, nh, max_rate)
+	MessageFilterJointState(tf2_ros::Buffer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01))
+	    : MessageFilter<sensor_msgs::JointState>(tf, target_frame, queue_size, nh)
             , tf_(tf)
 	    , nh_(nh)
 	    , max_rate_(max_rate)
@@ -88,7 +89,7 @@ public:
 	 * \param max_rate The maximum rate to check for newly transformable messages
 	 */
 	template<class F>
-	MessageFilterJointState(F& f, Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01))
+	MessageFilterJointState(F& f, tf2_ros::Buffer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01))
 	    : tf_(tf)
 	    , nh_(nh)
 	    , max_rate_(max_rate)
@@ -118,7 +119,7 @@ public:
 	~MessageFilterJointState()
 	    {
 		message_connection_.disconnect();
-		tf_.removeTransformsChangedListener(tf_connection_);
+		tf_._removeTransformsChangedListener(tf_connection_);
 
 		clear();
 
@@ -152,7 +153,6 @@ public:
 		std::stringstream ss;
 		for (std::vector<std::string>::iterator it = target_frames_.begin(); it != target_frames_.end(); ++it)
 		{
-		    *it = tf::resolve(tf_.getTFPrefix(), *it);
 		    ss << *it << " ";
 		}
 		target_frames_string_ = ss.str();
@@ -268,7 +268,7 @@ public:
 		warned_about_unresolved_name_ = false;
 		warned_about_empty_frame_id_ = false;
 
-		tf_connection_ = tf_.addTransformsChangedListener(boost::bind(&MessageFilterJointState::transformsChanged, this));
+		tf_connection_ = tf_._addTransformsChangedListener(boost::bind(&MessageFilterJointState::transformsChanged, this));
 
 		max_rate_timer_ = nh_.createTimer(max_rate_, &MessageFilterJointState::maxRateTimerCallback, this);
 	    }
@@ -299,7 +299,6 @@ public:
 		if (frame_id[0] != '/')
 		{
 		    std::string unresolved = frame_id;
-		    frame_id = tf::resolve(tf_.getTFPrefix(), frame_id);
 
 		    if (!warned_about_unresolved_name_)
 		    {
@@ -318,7 +317,7 @@ public:
 		    {
 			ros::Time latest_transform_time ;
 
-			tf_.getLatestCommonTime(frame_id, target_frame, latest_transform_time, 0) ;
+			tf_._getLatestCommonTime(tf_._lookupFrameNumber(frame_id), tf_._lookupFrameNumber(target_frame), latest_transform_time, 0) ;
 			if (stamp + tf_.getCacheLength() < latest_transform_time)
 			{
 			    ++failed_out_the_back_count_;
@@ -459,7 +458,7 @@ public:
 		failure_signal_(evt.getMessage(), reason);
 	    }
 
-	Transformer& tf_; ///< The Transformer used to determine if transformation data is available
+	tf2_ros::Buffer& tf_; ///< The Transformer used to determine if transformation data is available
 	ros::NodeHandle nh_; ///< The node used to subscribe to the topic
 	ros::Duration max_rate_;
 	ros::Timer max_rate_timer_;
@@ -502,7 +501,7 @@ public:
 
 #ifndef Q_MOC_RUN
 #include <message_filters/subscriber.h>
-#include <tf/message_filter.h>
+#include <tf2_ros/message_filter.h>
 #endif
 
 #include "rviz/display_context.h"
@@ -542,12 +541,12 @@ public:
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-      auto tf_client = context_->getTFClient();
+      auto tf_client = context_->getTF2BufferPtr();
 
 #ifndef _WIN32
 # pragma GCC diagnostic pop
 #endif
-      tf_filter_ = new tf::MessageFilterJointState( *tf_client,
+      tf_filter_ = new tf2_ros::MessageFilterJointState( *tf_client,
                                                     fixed_frame_.toStdString(), queue_size_property_->getInt(), update_nh_ );
 
       tf_filter_->connectInput( sub_ );
@@ -655,7 +654,7 @@ protected:
   virtual void processMessage( const sensor_msgs::JointState::ConstPtr& msg ) = 0;
 
   message_filters::Subscriber<sensor_msgs::JointState> sub_;
-  tf::MessageFilterJointState* tf_filter_;
+  tf2_ros::MessageFilterJointState* tf_filter_;
   uint32_t messages_received_;
 };
 } // rviz

@@ -13,6 +13,7 @@
 
 #include "effort_display.h"
 
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <urdf/model.h>
 
 namespace rviz
@@ -336,15 +337,15 @@ namespace rviz
 		    continue;
 		}
 ;
-		tf::Vector3 axis_joint(joint->axis.x, joint->axis.y, joint->axis.z);
-		tf::Vector3 axis_z(0,0,1);
-		tf::Quaternion axis_rotation(tf::tfCross(axis_joint, axis_z), tf::tfAngle(axis_joint, axis_z));
+		tf2::Vector3 axis_joint(joint->axis.x, joint->axis.y, joint->axis.z);
+		tf2::Vector3 axis_z(0,0,1);
+		tf2::Quaternion axis_rotation(tf2::tf2Cross(axis_joint, axis_z), tf2::tf2Angle(axis_joint, axis_z));
 		if ( std::isnan(axis_rotation.x()) ||
 		     std::isnan(axis_rotation.y()) ||
-		     std::isnan(axis_rotation.z()) ) axis_rotation = tf::Quaternion::getIdentity();
+		     std::isnan(axis_rotation.z()) ) axis_rotation = tf2::Quaternion::getIdentity();
 
-		tf::Quaternion axis_orientation(orientation.x, orientation.y, orientation.z, orientation.w);
-		tf::Quaternion axis_rot = axis_orientation * axis_rotation;
+		tf2::Quaternion axis_orientation(orientation.x, orientation.y, orientation.z, orientation.w);
+		tf2::Quaternion axis_rot = axis_orientation * axis_rotation;
 		Ogre::Quaternion joint_orientation(Ogre::Real(axis_rot.w()), Ogre::Real(axis_rot.x()), Ogre::Real(axis_rot.y()), Ogre::Real(axis_rot.z()));
 		visual->setFramePosition( joint_name, position );
 		visual->setFrameOrientation( joint_name, joint_orientation );

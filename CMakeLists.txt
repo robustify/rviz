@@ -148,7 +148,9 @@ find_package(catkin REQUIRED
   sensor_msgs
   std_msgs
   std_srvs
-  tf
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
   urdf
   visualization_msgs
 )
@@ -210,7 +212,9 @@ catkin_package(
     roslib
     sensor_msgs
     std_msgs
-    tf
+    tf2
+    tf2_ros
+    tf2_geometry_msgs
     urdf
     visualization_msgs
 )

@@ -29,8 +29,6 @@
 
 #include <sstream>
 
-#include <tf/transform_listener.h>
-
 #include "rviz/default_plugin/markers/marker_base.h"
 #include "rviz/default_plugin/marker_utils.h"
 #include "rviz/display_context.h"
@@ -77,15 +75,15 @@ void MarkerDisplay::onInitialize()
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-  auto tf_client = context_->getTFClient();
+  auto tf_client = context_->getTF2BufferPtr();
 
 #ifndef _WIN32
 # pragma GCC diagnostic pop
 #endif
-  tf_filter_ = new tf::MessageFilter<visualization_msgs::Marker>( *tf_client,
-                                                                  fixed_frame_.toStdString(),
-                                                                  queue_size_property_->getInt(),
-                                                                  update_nh_ );
+  tf_filter_ = new tf2_ros::MessageFilter<visualization_msgs::Marker>( *tf_client,
+                                                                       fixed_frame_.toStdString(),
+                                                                       queue_size_property_->getInt(),
+                                                                       update_nh_ );
 
   tf_filter_->connectInput(sub_);
   tf_filter_->registerCallback(boost::bind(&MarkerDisplay::incomingMarker, this, _1));
@@ -274,7 +272,7 @@ void MarkerDisplay::incomingMarker( const visualization_msgs::Marker::ConstPtr& 
   message_queue_.push_back(marker);
 }
 
-void MarkerDisplay::failedMarker(const ros::MessageEvent<visualization_msgs::Marker>& marker_evt, tf::FilterFailureReason reason)
+void MarkerDisplay::failedMarker(const ros::MessageEvent<visualization_msgs::Marker>& marker_evt, tf2_ros::FilterFailureReason reason)
 {
   visualization_msgs::Marker::ConstPtr marker = marker_evt.getConstMessage();
   if (marker->action == visualization_msgs::Marker::DELETE ||

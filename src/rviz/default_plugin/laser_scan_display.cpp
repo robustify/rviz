@@ -69,7 +69,7 @@ void LaserScanDisplay::onInitialize()
 
 void LaserScanDisplay::processMessage( const sensor_msgs::LaserScanConstPtr& scan )
 {
-  sensor_msgs::PointCloudPtr cloud( new sensor_msgs::PointCloud );
+  sensor_msgs::PointCloud2Ptr cloud( new sensor_msgs::PointCloud2 );
 
   std::string frame_id = scan->header.frame_id;
 
@@ -89,12 +89,12 @@ void LaserScanDisplay::processMessage( const sensor_msgs::LaserScanConstPtr& sca
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-    auto tf_client = context_->getTFClient();
+    auto tf_client = context_->getTF2BufferPtr();
 
 #ifndef _WIN32
 # pragma GCC diagnostic pop
 #endif
-    projector_->transformLaserScanToPointCloud( fixed_frame_.toStdString(), *scan, *cloud, *tf_client,
+    projector_->transformLaserScanToPointCloud( fixed_frame_.toStdString(), *scan, *cloud, *tf_client, -1.0,
                                                 laser_geometry::channel_option::Intensity );
   }
   catch (tf::TransformException& e)

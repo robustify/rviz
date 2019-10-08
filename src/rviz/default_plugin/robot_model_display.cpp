@@ -82,10 +82,6 @@ RobotModelDisplay::RobotModelDisplay()
                                                     "Name of the parameter to search for to load the robot description.",
                                                     this, SLOT( updateRobotDescription() ));
 
-  tf_prefix_property_ = new StringProperty( "TF Prefix", "",
-                                            "Robot Model normally assumes the link name is the same as the tf frame name. "
-                                            " This option allows you to set a prefix.  Mainly useful for multi-robot situations.",
-                                            this, SLOT( updateTfPrefix() ));
 }
 
 RobotModelDisplay::~RobotModelDisplay()
@@ -126,12 +122,6 @@ void RobotModelDisplay::updateVisualVisible()
 void RobotModelDisplay::updateCollisionVisible()
 {
   robot_->setCollisionVisible( collision_enabled_property_->getValue().toBool() );
-  context_->queueRender();
-}
-
-void RobotModelDisplay::updateTfPrefix()
-{
-  clearStatuses();
   context_->queueRender();
 }
 
@@ -185,8 +175,7 @@ void RobotModelDisplay::load()
   setStatus( StatusProperty::Ok, "URDF", "URDF parsed OK" );
   robot_->load( descr );
   robot_->update( TFLinkUpdater( context_->getFrameManager(),
-                                 boost::bind( linkUpdaterStatusFunction, _1, _2, _3, this ),
-                                 tf_prefix_property_->getStdString() ));
+                                 boost::bind( linkUpdaterStatusFunction, _1, _2, _3, this )));
 }
 
 void RobotModelDisplay::onEnable()
@@ -210,8 +199,7 @@ void RobotModelDisplay::update( float wall_dt, float ros_dt )
   if( has_new_transforms_ || update )
   {
     robot_->update( TFLinkUpdater( context_->getFrameManager(),
-                                   boost::bind( linkUpdaterStatusFunction, _1, _2, _3, this ),
-                                   tf_prefix_property_->getStdString() ));
+                                   boost::bind( linkUpdaterStatusFunction, _1, _2, _3, this )));
     context_->queueRender();
 
     has_new_transforms_ = false;

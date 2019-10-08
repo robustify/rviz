@@ -3,8 +3,8 @@
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
 
-#include <tf/transform_broadcaster.h>
-#include <tf/tf.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 ros::Publisher g_marker_pub;
 
@@ -687,21 +687,36 @@ void publishCallback(const ros::TimerEvent&)
   ++counter;
 }
 
-void frameCallback(const ros::TimerEvent&)
+void frameCallback(const ros::TimerEvent& event)
 {
   static uint32_t counter = 0;
 
-  static tf::TransformBroadcaster br;
-  tf::Transform t;
+  static tf2_ros::TransformBroadcaster br;
+  std::vector<geometry_msgs::TransformStamped> t;
+  t.resize(2);
 
-  t.setOrigin(tf::Vector3(0.0, 0.0, (counter % 1000) * 0.01));
-  t.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
-  br.sendTransform(tf::StampedTransform(t, ros::Time::now(), "base_link", "my_link"));
+  t[0].header.stamp = event.current_real;
+  t[0].header.frame_id = "base_link";
+  t[0].child_frame_id = "my_link";
+  t[0].transform.translation.x = 0.0;
+  t[0].transform.translation.y = 0.0;
+  t[0].transform.translation.z = (counter % 1000) * 0.01;
 
-  t.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-  t.setRotation(tf::createQuaternionFromRPY(M_PI*0.25, M_PI*0.25, 0.0));
-  br.sendTransform(tf::StampedTransform(t, ros::Time::now(), "rotate_base_link", "base_link"));
+  tf2::Quaternion q_rot;
+  q_rot.setRPY(0.0, 0.0, 0.0);
+  tf2::convert(q_rot, t[0].transform.rotation);
+  // t[0].transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0.0, 0.0, 0.0);
 
+  // t.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+  t[1].transform.translation.x = 0.0;
+  t[1].transform.translation.y = 0.0;
+  t[1].transform.translation.z = 0.0;
+
+  q_rot.setRPY(M_PI*0.25, M_PI*0.25, 0.0);
+  tf2::convert(q_rot, t[1].transform.rotation);
+  // t[1].transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(M_PI*0.25, M_PI*0.25, 0.0);
+
+  br.sendTransform(t);
   ++counter;
 }
 
@@ -713,8 +728,6 @@ int main(int argc, char** argv)
   g_marker_pub = n.advertise<visualization_msgs::Marker> ("visualization_marker", 0);
   ros::Timer publish_timer = n.createTimer(ros::Duration(1), publishCallback);
   ros::Timer frame_timer = n.createTimer(ros::Duration(0.01), frameCallback);
-
-  tf::TransformBroadcaster tf_broadcaster;
 
   ros::Duration(0.1).sleep();
 

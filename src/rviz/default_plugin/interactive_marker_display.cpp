@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <tf/transform_listener.h>
-
 #include "rviz/frame_manager.h"
 #include "rviz/properties/bool_property.h"
 #include "rviz/properties/ros_topic_property.h"
@@ -112,7 +110,7 @@ void InteractiveMarkerDisplay::onInitialize()
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-  tf::Transformer* tf = context_->getFrameManager()->getTFClient();
+  std::shared_ptr<tf2_ros::Buffer> tf = context_->getFrameManager()->getTF2BufferPtr();
 
 #ifndef _WIN32
 # pragma GCC diagnostic pop

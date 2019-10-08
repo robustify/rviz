@@ -52,8 +52,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include <tf/transform_listener.h>
-
 #include <ros/package.h>
 #include <ros/callback_queue.h>
 
@@ -122,7 +120,7 @@ public:
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 VisualizationManager::VisualizationManager(RenderPanel* render_panel, WindowManagerInterface * wm)
-: VisualizationManager(render_panel, wm, boost::shared_ptr<tf::TransformListener>())
+: VisualizationManager(render_panel, wm, boost::shared_ptr<tf2_ros::TransformListener>())
 {}
 #ifndef _WIN32
 # pragma GCC diagnostic pop
@@ -131,7 +129,7 @@ VisualizationManager::VisualizationManager(RenderPanel* render_panel, WindowMana
 VisualizationManager::VisualizationManager(
   RenderPanel* render_panel,
   WindowManagerInterface* wm,
-  boost::shared_ptr<tf::TransformListener> tf)
+  boost::shared_ptr<tf2_ros::TransformListener> tf)
 : ogre_root_( Ogre::Root::getSingletonPtr() )
 , update_timer_(0)
 , shutting_down_(false)
@@ -421,7 +419,7 @@ void VisualizationManager::updateFrames()
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  frame_manager_->getTFClient()->getFrameStrings( frames );
+  frame_manager_->getTF2BufferPtr()->_getFrameStrings( frames );
 #ifndef _WIN32
 # pragma GCC diagnostic pop
 #endif
@@ -450,18 +448,6 @@ void VisualizationManager::updateFrames()
   }
 }
 
-tf::TransformListener* VisualizationManager::getTFClient() const
-{
-#ifndef _WIN32
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-  return frame_manager_->getTFClient();
-#ifndef _WIN32
-# pragma GCC diagnostic pop
-#endif
-}
-
 std::shared_ptr<tf2_ros::Buffer> VisualizationManager::getTF2BufferPtr() const
 {
   return frame_manager_->getTF2BufferPtr();
@@ -474,7 +460,7 @@ void VisualizationManager::resetTime()
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  frame_manager_->getTFClient()->clear();
+  frame_manager_->getTF2BufferPtr()->clear();
 #ifndef _WIN32
 # pragma GCC diagnostic pop
 #endif

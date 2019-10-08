@@ -47,11 +47,6 @@ namespace ros
 class CallbackQueueInterface;
 }
 
-namespace tf
-{
-class TransformListener;
-}
-
 namespace tf2_ros
 {
 class Buffer;
@@ -94,10 +89,6 @@ public:
 
   /** @brief Return the FrameManager instance. */
   virtual FrameManager* getFrameManager() const = 0;
-
-  /** @brief Convenience function: returns getFrameManager()->getTFClient(). */
-  [[deprecated("use getTF2BufferPtr() instead")]]
-  virtual tf::TransformListener* getTFClient() const = 0;
 
   /** @brief Convenience function: returns getFrameManager()->getTF2BufferPtr(). */
   virtual std::shared_ptr<tf2_ros::Buffer> getTF2BufferPtr() const = 0;
